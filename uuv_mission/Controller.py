@@ -1,4 +1,3 @@
-
 class PDController:
     def __init__(self, Kp: float, Kd: float):
         self.Kp = Kp
