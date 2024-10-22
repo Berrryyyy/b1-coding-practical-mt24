@@ -2,7 +2,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 import numpy as np
 import matplotlib.pyplot as plt
-from terrain import generate_reference_and_limits
+from uuv_mission.terrain import generate_reference_and_limits
+from uuv_mission.Controller import PDController
 import pandas as pd
 
 class Submarine:
@@ -78,13 +79,25 @@ class Mission:
     def from_csv(cls, file_name:str):
 
         msndata = pd.read_csv(file_name)
-        
-        reference = msndata["reference"]
-        cave_height = msndata["column_height"]
-        cave_depth = msndata["column_depth"]
+
+        reference = msndata['reference']
+        cave_height = msndata['cave_height']
+        cave_depth = msndata['cave_depth']
 
         return cls(reference,cave_height,cave_depth)
 
+class PDController:
+    def __init__(self, Kp: float, Kd: float):
+        self.Kp = Kp
+        self.Kd = Kd
+        self.previous_error = 0.0
+
+    def compute_action(self, reference_depth: float, current_depth: float, dt: float) -> float:
+        error = reference_depth - current_depth
+        derivative = (error - self.previous_error) / dt
+        action = self.Kp * error + self.Kd * derivative
+        self.previous_error = error
+        return action
 
 class ClosedLoop:
     def __init__(self, plant: Submarine, controller):
@@ -103,8 +116,11 @@ class ClosedLoop:
 
         for t in range(T):
             positions[t] = self.plant.get_position()
-            observation_t = self.plant.get_depth()
-            # Call your controller here
+            current_depth = self.plant.get_depth()
+            reference_depth = mission.reference[t]
+            dt = 1  # Assuming a time step of 1 for simplicity; adjust as needed
+            actions[t] = self.controller.compute_action(reference_depth, current_depth, dt)
+
             self.plant.transition(actions[t], disturbances[t])
 
         return Trajectory(positions)
