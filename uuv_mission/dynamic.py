@@ -2,9 +2,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 import numpy as np
 import matplotlib.pyplot as plt
+<<<<<<< HEAD
 from uuv_mission.terrain import generate_reference_and_limits
 from uuv_mission.Controller import PDController
 import pandas as pd
+=======
+from terrain import generate_reference_and_limits
+>>>>>>> main
 
 class Submarine:
     def __init__(self):
